@@ -1,0 +1,10 @@
+chain_command:
+  chains:
+    chain_1:
+      parent: 'foo:hello'
+      children:
+        - 'bar:hi'
+    chain_2:
+      parent: 'bar:hi'
+      children:
+        - 'foo:hello'
