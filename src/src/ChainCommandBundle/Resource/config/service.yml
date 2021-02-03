@@ -1,8 +1,11 @@
 services:
-  chain_command.subscriber:
-    class: App\ChainCommandBundle\EventSubscriber\CommandSubscriber
-    arguments: ['@logger']
+  chain_command.service:
+    class: App\ChainCommandBundle\Service\ChainCommandService
     calls:
       - setChainCommands: ['%chain_command.chains%']
+
+  chain_command.subscriber:
+    class: App\ChainCommandBundle\EventSubscriber\CommandSubscriber
+    arguments: ['@logger', '@chain_command.service']
     tags:
-      - { name: kernel.event_subscriber, event: console.command }
+      - {name: kernel.event_subscriber, event: console.command}

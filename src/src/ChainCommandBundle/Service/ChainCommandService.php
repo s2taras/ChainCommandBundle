@@ -1,13 +1,27 @@
 <?php
 
-namespace App\ChainCommandBundle\Helper;
+namespace App\ChainCommandBundle\Service;
 
 /**
  * Trait ChainTrait
  * @package App\ChainCommandBundle\Service
  */
-trait ChainTrait
+class ChainCommandService
 {
+    /**
+     * @var array
+     */
+    protected $chainCommands = [];
+
+    /**
+     * Set base chains
+     * @param array $chainCommands
+     */
+    public function setChainCommands(array $chainCommands)
+    {
+        $this->chainCommands = $chainCommands;
+    }
+
     /**
      * check is parent
      * @param string $commandName Current command name

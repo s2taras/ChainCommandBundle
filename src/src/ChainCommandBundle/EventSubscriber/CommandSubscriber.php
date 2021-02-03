@@ -3,7 +3,7 @@
 namespace App\ChainCommandBundle\EventSubscriber;
 
 use App\ChainCommandBundle\Exception\MemberException;
-use App\ChainCommandBundle\Helper\ChainTrait;
+use App\ChainCommandBundle\Service\ChainCommandService;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\ConsoleEvents;
@@ -20,8 +20,6 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
  */
 class CommandSubscriber implements EventSubscriberInterface
 {
-    use ChainTrait;
-
     const PARENT_COMMAND_REGISTER_LOG = '%s is a master command of a command chain that has registered member commands';
     const PARENT_COMMAND_EXECUTION_START_LOG = 'Executing %s command itself first:';
     const PARENT_COMMAND_EXECUTION_CHILDREN_LOG = 'Executing %s chain members:';
@@ -34,31 +32,35 @@ class CommandSubscriber implements EventSubscriberInterface
     protected $logger;
 
     /**
-     * @var array Chains configuration
-     */
-    protected $chainCommands = [];
-
-    /**
      * @var Application
      */
     protected $application;
 
     /**
+     * @var ChainCommandService
+     */
+    protected $commandService;
+
+    /**
      * CommandSubscriber constructor
      * @param LoggerInterface $logger
+     * @param ChainCommandService $commandService
      */
-    public function __construct(LoggerInterface $logger)
+    public function __construct(LoggerInterface $logger, ChainCommandService $commandService)
     {
         $this->logger = $logger;
+        $this->commandService = $commandService;
     }
 
     /**
-     * Set chain commands
-     * @param $chainCommands
+     * Set application if it doesn't exist
+     * @param Application $application
      */
-    public function setChainCommands($chainCommands)
+    public function setApplication(Application $application)
     {
-        $this->chainCommands = $chainCommands;
+        if ($this->application == null) {
+            $this->application = $application;
+        }
     }
 
     /**
@@ -82,14 +84,14 @@ class CommandSubscriber implements EventSubscriberInterface
         $command = $event->getCommand();
         $commandName = $command->getName();
 
-        if ($this->isChild($commandName)) {
-            throw new MemberException('some:command');
+        if ($this->commandService->isChild($commandName)) {
+            throw new MemberException($commandName);
         }
 
-        if ($this->isParent($commandName)) {
+        if ($this->commandService->isParent($commandName)) {
             $this->logger->info(sprintf(self::PARENT_COMMAND_REGISTER_LOG, $commandName));
 
-            foreach ($this->getChildren($commandName) as $childCommand) {
+            foreach ($this->commandService->getChildren($commandName) as $childCommand) {
                 $this->logger->info(sprintf(self::CHILD_COMMAND_REGISTER_LOG, $childCommand, $commandName));
             }
 
@@ -108,10 +110,10 @@ class CommandSubscriber implements EventSubscriberInterface
         $command = $event->getCommand();
         $commandName = $command->getName();
 
-        if ($this->isParent($commandName)) {
+        if ($this->commandService->isParent($commandName)) {
             $this->logger->info(sprintf(self::PARENT_COMMAND_EXECUTION_CHILDREN_LOG, $commandName));
 
-            foreach ($this->getChildren($commandName) as $childrenCommand) {
+            foreach ($this->commandService->getChildren($commandName) as $childrenCommand) {
                 $child = $this->application->get($childrenCommand);
                 $child->run($event->getInput(), $event->getOutput());
             }

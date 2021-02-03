@@ -4,7 +4,3 @@ chain_command:
       parent: 'foo:hello'
       children:
         - 'bar:hi'
-    chain_2:
-      parent: 'bar:hi'
-      children:
-        - 'foo:hello'
